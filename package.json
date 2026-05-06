@@ -1,0 +1,23 @@
+{
+  "name": "tour-guide-web-app",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+    "build": "npm run build --workspace frontend",
+    "start": "npm run start --workspace backend",
+    "azure:build": "npm install && npm run build"
+  },
+  "dependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "overrides": {
+    "postcss": "^8.5.14",
+    "tar": "^7.5.14",
+    "@xmldom/xmldom": "^0.9.10"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
