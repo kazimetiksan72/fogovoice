@@ -80,7 +80,9 @@ export function GuideTourDetailPage() {
           <section className="space-y-5">
             <div className="rounded-md border border-slate-200 bg-white p-5">
               <h2 className="text-lg font-black">Canlı Ses</h2>
-              <div className="mt-3 rounded-md bg-cyan-50 p-4 text-cyan-800">Bağlantı: {audio.connected ? 'Canlı' : 'Kapalı'} · Mikrofon: {audio.micEnabled ? 'Açık' : 'Kapalı'}</div>
+              <div className="mt-3 rounded-md bg-cyan-50 p-4 text-cyan-800">
+                Bağlantı: {audio.connected ? 'Canlı' : 'Kapalı'} · Mikrofon: {audio.micEnabled ? 'Açık' : 'Kapalı'} · Yayın: {audio.localAudioPublished ? 'Gönderiliyor' : 'Bekliyor'}
+              </div>
               {audioError ? <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{audioError}</div> : null}
               {!audio.connected ? <Button className="mt-4 w-full sm:w-auto" onClick={startMic} disabled={tour?.status === 'ended'}>Mikrofonu Aç</Button> : <Button className="mt-4 w-full sm:w-auto" onClick={audio.toggleMicrophone}>{audio.micEnabled ? 'Mikrofonu Kapat' : 'Mikrofonu Aç'}</Button>}
             </div>

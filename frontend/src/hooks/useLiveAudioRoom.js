@@ -15,11 +15,12 @@ function assertMicrophoneSupported() {
 export function useLiveAudioRoom() {
   const room = useMemo(() => new Room({ adaptiveStream: true, dynacast: true }), []);
   const remoteAudioElementsRef = useRef(new Map());
+  const localTrackRef = useRef(null);
   const [connected, setConnected] = useState(false);
   const [micEnabled, setMicEnabled] = useState(false);
+  const [localAudioPublished, setLocalAudioPublished] = useState(false);
   const [remoteParticipants, setRemoteParticipants] = useState([]);
   const [remoteAudioTrackCount, setRemoteAudioTrackCount] = useState(0);
-  const [localTrack, setLocalTrack] = useState(null);
 
   useEffect(() => {
     const detachRemoteAudioTrack = (track, publication) => {
@@ -81,12 +82,15 @@ export function useLiveAudioRoom() {
     return () => {
       room.removeAllListeners();
       room.disconnect();
-      localTrack?.stop();
+      localTrackRef.current?.stop();
+      localTrackRef.current = null;
+      setLocalAudioPublished(false);
+      setMicEnabled(false);
       remoteAudioElementsRef.current.forEach((element) => element.remove());
       remoteAudioElementsRef.current.clear();
       setRemoteAudioTrackCount(0);
     };
-  }, [room, localTrack]);
+  }, [room]);
 
   const connect = useCallback(async (token) => {
     if (!config.livekitUrl) throw new Error('LiveKit URL is not configured');
@@ -97,37 +101,51 @@ export function useLiveAudioRoom() {
 
   const publishMicrophone = useCallback(async () => {
     assertMicrophoneSupported();
-    let track = localTrack;
+    let track = localTrackRef.current;
     if (!track) {
       track = await createLocalAudioTrack({ echoCancellation: true, noiseSuppression: true, autoGainControl: true });
-      setLocalTrack(track);
+      localTrackRef.current = track;
       await room.localParticipant.publishTrack(track);
+      setLocalAudioPublished(true);
     }
     await track.unmute();
     setMicEnabled(true);
-  }, [localTrack, room]);
+  }, [room]);
 
   const toggleMicrophone = useCallback(async () => {
-    if (!localTrack) return publishMicrophone();
+    const track = localTrackRef.current;
+    if (!track) return publishMicrophone();
     if (micEnabled) {
-      await localTrack.mute();
+      await track.mute();
       setMicEnabled(false);
     } else {
-      await localTrack.unmute();
+      await track.unmute();
       setMicEnabled(true);
     }
-  }, [localTrack, micEnabled, publishMicrophone]);
+  }, [micEnabled, publishMicrophone]);
 
   const disconnect = useCallback(async () => {
-    localTrack?.stop();
-    setLocalTrack(null);
+    localTrackRef.current?.stop();
+    localTrackRef.current = null;
+    setLocalAudioPublished(false);
     setMicEnabled(false);
     remoteAudioElementsRef.current.forEach((element) => element.remove());
     remoteAudioElementsRef.current.clear();
     setRemoteAudioTrackCount(0);
     await room.disconnect();
     setConnected(false);
-  }, [localTrack, room]);
+  }, [room]);
 
-  return { room, connected, micEnabled, remoteParticipants, remoteAudioTrackCount, connect, publishMicrophone, toggleMicrophone, disconnect };
+  return {
+    room,
+    connected,
+    micEnabled,
+    localAudioPublished,
+    remoteParticipants,
+    remoteAudioTrackCount,
+    connect,
+    publishMicrophone,
+    toggleMicrophone,
+    disconnect
+  };
 }
