@@ -60,7 +60,7 @@ export function TouristListeningPage() {
           <h1 className="text-2xl font-black">{tour?.title}</h1>
           <p className="mt-2 text-slate-600">Rehber: {tour?.guideId?.name || tour?.guide?.name || '-'}</p>
           <div className="mt-5 rounded-md bg-cyan-50 p-4 text-cyan-800">
-            Bağlantı: {audio.connected ? 'Dinleniyor' : started ? 'Bağlanıyor' : 'Hazır'} · Tur: {tour?.status === 'ended' ? 'Sona erdi' : 'Aktif'}
+            Bağlantı: {audio.connected ? 'Dinleniyor' : started ? 'Bağlanıyor' : 'Hazır'} · Ses kanalı: {audio.remoteAudioTrackCount > 0 ? 'Alınıyor' : 'Bekleniyor'} · Tur: {tour?.status === 'ended' ? 'Sona erdi' : 'Aktif'}
           </div>
           <p className="mt-4 text-sm text-slate-500">Mobil tarayıcıda sesin kesilmemesi için ekranı açık tutun.</p>
           {tour?.status === 'ended' ? (
