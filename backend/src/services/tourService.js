@@ -3,6 +3,7 @@ import { Announcement } from '../models/Announcement.js';
 import { Tour } from '../models/Tour.js';
 import { User } from '../models/User.js';
 import { ApiError } from '../utils/errors.js';
+import { logger } from '../utils/logger.js';
 import { createGuideToken, createTouristToken } from './livekitService.js';
 import { sendPushToPlayers } from './oneSignalService.js';
 
@@ -21,9 +22,11 @@ export const populateTour = async (id) => {
 };
 
 export async function createTour({ title, guide }) {
+  logger.info('tour:create:start', { guideId: guide._id.toString(), title });
   const tourCode = await generateTourCode();
   const livekitRoomName = `tour-${tourCode}-${nanoid(8)}`;
   const tour = await Tour.create({ title, guideId: guide._id, tourCode, livekitRoomName });
+  logger.info('tour:create:success', { tourId: tour._id.toString(), guideId: guide._id.toString(), tourCode });
   return populateTour(tour._id);
 }
 
@@ -36,6 +39,7 @@ export async function getTourForUser({ id, user }) {
 }
 
 export async function endTour({ id, guide }) {
+  logger.info('tour:end:start', { tourId: id, guideId: guide._id.toString() });
   const tour = await Tour.findById(id);
   if (!tour) throw new ApiError(404, 'Tour not found');
   if (tour.guideId.toString() !== guide._id.toString()) throw new ApiError(403, 'Forbidden');
@@ -56,6 +60,7 @@ export async function endTour({ id, guide }) {
       data: { type: 'tour-ended', tourId: tour._id.toString() }
     });
   }
+  logger.info('tour:end:success', { tourId: id, guideId: guide._id.toString() });
   return populateTour(tour._id);
 }
 
@@ -66,15 +71,18 @@ export async function getByCode(tourCode) {
 }
 
 export async function joinTour({ tourCode, touristName, oneSignalPlayerId }) {
+  logger.info('tour:join:start', { tourCode, hasOneSignalPlayerId: Boolean(oneSignalPlayerId) });
   const tour = await getByCode(tourCode);
   const participantId = `tourist-${nanoid(12)}`;
   tour.participants.push({ participantId, name: touristName, oneSignalPlayerId, joinedAt: new Date(), isConnected: true });
   await tour.save();
   const livekitToken = await createTouristToken({ identity: participantId, name: touristName, roomName: tour.livekitRoomName });
+  logger.info('tour:join:success', { tourId: tour._id.toString(), tourCode, participantId });
   return { participantId, livekitToken, livekitRoomName: tour.livekitRoomName, tour };
 }
 
 export async function leaveTour({ tourId, participantId }) {
+  logger.info('tour:leave:start', { tourId, participantId });
   const tour = await Tour.findById(tourId);
   if (!tour) throw new ApiError(404, 'Tour not found');
   const participant = tour.participants.find((p) => p.participantId === participantId);
@@ -82,14 +90,17 @@ export async function leaveTour({ tourId, participantId }) {
   participant.isConnected = false;
   participant.leftAt = new Date();
   await tour.save();
+  logger.info('tour:leave:success', { tourId, participantId });
   return { participantId };
 }
 
 export async function getGuideLiveKitToken({ tourId, guide }) {
+  logger.info('livekit:guide-token:start', { tourId, guideId: guide._id.toString() });
   const tour = await Tour.findById(tourId);
   if (!tour || tour.status !== 'active') throw new ApiError(404, 'Active tour not found');
   if (tour.guideId.toString() !== guide._id.toString()) throw new ApiError(403, 'Forbidden');
   const livekitToken = await createGuideToken({ identity: `guide-${guide._id}`, name: guide.name, roomName: tour.livekitRoomName });
+  logger.info('livekit:guide-token:success', { tourId, guideId: guide._id.toString(), roomName: tour.livekitRoomName });
   return { livekitToken, livekitRoomName: tour.livekitRoomName };
 }
 
@@ -101,6 +112,7 @@ export async function getTouristLiveKitToken({ tourCode, touristName }) {
 }
 
 export async function createAnnouncement({ tourId, guide, message }) {
+  logger.info('announcement:create:start', { tourId, guideId: guide._id.toString(), messageLength: message.length });
   const tour = await Tour.findById(tourId);
   if (!tour || tour.status !== 'active') throw new ApiError(404, 'Active tour not found');
   if (tour.guideId.toString() !== guide._id.toString()) throw new ApiError(403, 'Forbidden');
@@ -111,6 +123,7 @@ export async function createAnnouncement({ tourId, guide, message }) {
     message,
     data: { type: 'announcement', tourId: tour._id.toString(), announcementId: announcement._id.toString() }
   });
+  logger.info('announcement:create:success', { tourId, guideId: guide._id.toString(), announcementId: announcement._id.toString() });
   return announcement;
 }
 
