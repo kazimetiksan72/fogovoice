@@ -17,6 +17,16 @@ function extractTourCode(decodedText) {
   return value.match(/\d{7}/)?.[0] || null;
 }
 
+function safeStop(scanner) {
+  if (!scanner) return;
+  try {
+    const result = scanner.stop();
+    if (result?.catch) result.catch(() => {});
+  } catch {
+    // html5-qrcode can throw synchronously if it is already stopped or paused.
+  }
+}
+
 export function QRScannerPage() {
   const navigate = useNavigate();
   const scannerRef = useRef(null);
@@ -53,11 +63,7 @@ export function QRScannerPage() {
           if (code) {
             scannedRef.current = true;
             setScannedCode(code);
-            scanner.pause(true);
             navigate(`/join/${code}`, { replace: true });
-            window.setTimeout(() => {
-              scanner.stop().catch(() => {});
-            }, 0);
           }
         }
       )
@@ -74,7 +80,7 @@ export function QRScannerPage() {
     return () => {
       cancelled = true;
       scannedRef.current = false;
-      if (startedRef.current) scannerRef.current?.stop().catch(() => {});
+      if (startedRef.current) safeStop(scannerRef.current);
       startedRef.current = false;
     };
   }, [navigate]);
