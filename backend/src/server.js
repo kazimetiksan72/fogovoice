@@ -21,6 +21,8 @@ const frontendDist = path.resolve(__dirname, '../../frontend/dist');
 const app = express();
 const allowedOrigins = [env.clientOrigin, env.adminOrigin].filter(Boolean);
 
+app.set('trust proxy', 1);
+
 app.use(
   cors({
     origin(origin, callback) {

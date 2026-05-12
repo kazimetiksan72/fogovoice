@@ -10,8 +10,16 @@ export const authLimiter = rateLimit({
 
 export const tourCodeLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  limit: 60,
+  limit: 600,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Too many tour code attempts' }
+  message: { success: false, message: 'Too many tour code lookups' }
+});
+
+export const tourJoinLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 80,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many tour join attempts' }
 });
